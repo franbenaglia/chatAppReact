@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './Audio.css';
 import { Capacitor } from '@capacitor/core';
 import { RecordingData } from 'capacitor-voice-recorder';
 import { NativeAudio } from '@capacitor-community/native-audio';
 import { IonCard, IonCardContent, IonGrid, IonProgressBar, IonButton, IonTitle, IonIcon, IonCol, IonRow } from '@ionic/react';
+import { micCircleOutline, pauseOutline, playOutline, playSkipForwardOutline, stopOutline, volumeHighOutline, volumeLowOutline } from 'ionicons/icons';
 
 interface ContainerProps {
     audioFile: RecordingData;
@@ -12,12 +13,12 @@ interface ContainerProps {
 const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
 
     let web: boolean = false;
-    let volume: number = 0.5;
-    let volumePercent: number = 50;
-    let duration: number = 0;
-    let currentTime: number = 0;
-    let audioBase64Url: string;
-    let progress: number = 0;
+
+    const [volumePercent, setVolumePercent] = useState(50);
+    const [volume, setVolume] = useState(0.5);
+    const [duration, setDuration] = useState(0);
+    const [progress, setProgress] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
 
     useEffect(() => {
 
@@ -25,15 +26,20 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
             web = true;
         }
         if (audioFile.value) {
-            audioBase64Url = "data:" + audioFile.value.mimeType + ";base64," + audioFile.value.recordDataBase64;
-            preload();
+            const audioBase64Url = "data:" + audioFile.value.mimeType + ";base64," + audioFile.value.recordDataBase64;
+            preload(audioBase64Url);
         }
+        /*
+                return () => {
+                   unload();
+                };
+                */
 
     }, []);
 
-    const preload = () => {
+    const preload = async (audioBase64Url: string) => {
 
-        NativeAudio.preload({
+        await NativeAudio.preload({
             assetId: "fire",
             assetPath: audioBase64Url,
             audioChannelNum: 1,
@@ -42,35 +48,45 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
 
         console.log('preload');
 
+        //do not work
+        try {
+            await NativeAudio.getDuration({
+                assetId: 'fire'
+            })
+                .then(result => {
+
+                    const dur = result.duration;
+
+                    setDuration(dur);
+
+                    console.log('Duration: ' + dur + ' seg');
+                });
+        } catch (error) {
+            setDuration(10);
+        }
+
     }
 
-    const play = () => {
 
-        NativeAudio.getDuration({
-            assetId: 'fire'
-        })
-            .then(result => {
+    const play = async () => {
 
-                let duration = result.duration * 1000;
+        await NativeAudio.play({
+            assetId: 'fire',
+        });
 
-                console.log('Duration: ' + duration + ' ms');
+        //10% percent repetion rate, progrees 0.1 max progress 1, guessing duration in segs
+        const rep = ((duration / 100) * 10) * 1000;
 
-                NativeAudio.play({
-                    assetId: 'fire',
-                });
-
-                let inter = setInterval(() => {
-                    progress += 0.05;
-                    if (progress > 0.99) {
-                        clearInterval(inter);
-                        setTimeout(() => {
-                            progress = 0;
-                            unload();
-                        }, 500);
-                    }
-                }, duration * 0.1);
-
-            });
+        let inter = setInterval(() => {
+            setProgress(prevprogress => {
+                if (prevprogress > 0.9) {
+                    clearInterval(inter);
+                    setProgress(0);
+                }
+                return prevprogress + 0.1
+            }
+            );
+        }, rep);
 
         console.log('play');
     }
@@ -94,6 +110,8 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
         NativeAudio.stop({
             assetId: 'fire',
         });
+
+        setProgress(0);
 
         console.log('stop');
 
@@ -131,9 +149,9 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
 
     const volup = () => {
 
-        volume = volume + 0.1;
-        volume > 1 ? volume = 1 : volume = volume;
-        volumePercent = volume * 100;
+        const vol = volume + 0.1;
+        vol > 1 ? setVolume(1) : setVolume(vol);
+        setVolumePercent(percent());
 
         NativeAudio.setVolume({
             assetId: 'fire',
@@ -146,9 +164,9 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
 
     const voldown = () => {
 
-        volume = volume - 0.1;
-        volume < 0 ? volume = 0 : volume = volume;
-        volumePercent = volume * 100;
+        const vol = volume - 0.1;
+        vol < 0 ? setVolume(0) : setVolume(vol);
+        setVolumePercent(percent());
 
         NativeAudio.setVolume({
             assetId: 'fire',
@@ -166,7 +184,7 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
         })
             .then(result => {
                 console.log('Segs: ' + result.duration);
-                duration = result.duration;
+                setDuration(result.duration);
             });
     }
 
@@ -176,7 +194,7 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
         })
             .then(result => {
                 console.log(result.currentTime);
-                currentTime = result.currentTime;
+                setCurrentTime(result.currentTime);
             })
     }
 
@@ -186,6 +204,12 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
             assetId: 'fire'
         });
 
+    }
+
+    const percent = () => {
+        const vf: number = volume * 100;
+        const vfor: string = vf.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        return Number(vfor);
     }
 
 
@@ -200,22 +224,22 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
                     <IonRow>
                         <IonCol>
                             <IonButton onClick={() => play()} color="light">
-                                <IonIcon name="play-outline"></IonIcon>
+                                <IonIcon ios={playOutline} md={playOutline} />
                             </IonButton>
                         </IonCol>
                         <IonCol>
                             <IonButton onClick={() => pause()} color="light">
-                                <IonIcon name="pause-outline"></IonIcon>
+                                <IonIcon ios={pauseOutline} md={pauseOutline} />
                             </IonButton>
                         </IonCol>
                         <IonCol>
                             <IonButton onClick={() => resume()} color="light">
-                                <IonIcon name="play-skip-forward-outline"></IonIcon>
+                                <IonIcon ios={playSkipForwardOutline} md={playSkipForwardOutline} />
                             </IonButton>
                         </IonCol>
                         <IonCol>
                             <IonButton onClick={() => stop()} color="light">
-                                <IonIcon name="stop-outline"></IonIcon>
+                                <IonIcon ios={stopOutline} md={stopOutline} />
                             </IonButton>
                         </IonCol>
 
@@ -225,7 +249,7 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
                     <IonRow>
                         <IonCol>
                             <IonButton onClick={() => voldown()}>
-                                <IonIcon name="volume-low-outline"></IonIcon>
+                                <IonIcon ios={volumeLowOutline} md={volumeLowOutline} />
                             </IonButton>
                         </IonCol>
                         <IonCol>
@@ -233,7 +257,7 @@ const Audio: React.FC<ContainerProps> = ({ audioFile }) => {
                         </IonCol>
                         <IonCol>
                             <IonButton onClick={() => volup()}>
-                                <IonIcon name="volume-high-outline"></IonIcon>
+                                <IonIcon ios={volumeHighOutline} md={volumeHighOutline} />
                             </IonButton>
                         </IonCol>
                     </IonRow>

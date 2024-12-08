@@ -1,20 +1,15 @@
 import { useContext, useEffect } from 'react';
 import './Group.css';
-import { ChatContext } from '../contexts/ChatContext';
+import { ChatContext, ChatContextI } from '../contexts/ChatContext';
 import { IonCol, IonGrid, IonRow, IonSelect, IonSelectOption } from '@ionic/react';
 
 
 const Group: React.FC = () => {
 
-
-    let group: string;
-
-    const { getGroup, setTheGroup } = useContext<any>(ChatContext);
-
+    const { getGroup, setTheGroup } = useContext<ChatContextI>(ChatContext);
 
     useEffect(() => {
 
-        group = getGroup();
 
     }, []);
 
@@ -26,7 +21,7 @@ const Group: React.FC = () => {
         <IonGrid>
             <IonRow>
                 <IonCol>
-                    <IonSelect onIonChange={(e) => setEvent(e)} value={group}
+                    <IonSelect onIonChange={(e) => setEvent(e)} value={getGroup()}
                         label="Select group" placeholder="Select group">
                         <IonSelectOption value="general">General</IonSelectOption>
                         <IonSelectOption value="opinionable">Opinionable</IonSelectOption>

@@ -35,16 +35,41 @@ import '@ionic/react/css/palettes/dark.system.css';
 import './theme/variables.css';
 import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
-import { ChatProvider } from './contexts/ChatContext';
+import { ChatContext, ChatContextI, ChatProvider } from './contexts/ChatContext';
 import { AudioFileProvider } from './contexts/AudioFileContext';
 import GroupPage from './pages/GroupsPage';
 import MembersPage from './pages/MembersPage';
 import LogoutPage from './pages/LogoutPage';
 import { useCookies } from 'react-cookie';
+import { useContext, useEffect, useState } from 'react';
+import { isLoggedIn, setGoogleJwtToken } from './helpers/AuthHelper';
+import Login from './components/Login';
 
 setupIonicReact();
 
 const App: React.FC = () => {
+
+  let [renderMenu, setRenderMenu] = useState(true);
+
+  let [user, setUser] = useState('anonimo');
+
+  const [cookies] = useCookies(['token', 'username']);
+
+  const logged = async () => {
+    const islog = await isLoggedIn();
+    setRenderMenu(islog);
+  }
+
+  useEffect(() => {
+    if (cookies.token) {
+      setGoogleJwtToken(cookies.token)
+    }
+
+    if (cookies.username) {
+      setUser(cookies.username)
+    }
+    logged();
+  }, []);
 
   return (
     <IonApp>
@@ -52,7 +77,7 @@ const App: React.FC = () => {
         <AudioFileProvider>
           <IonReactRouter>
             <IonSplitPane contentId="main">
-              <Menu />
+              {renderMenu ? <Menu user={user} /> : <Login />}
               <IonRouterOutlet id="main">
                 <Route path="/Login" exact={true}>
                   <LoginPage />

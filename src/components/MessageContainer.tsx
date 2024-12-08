@@ -4,20 +4,20 @@ import './MessageContainer.css';
 import Audio from './Audio';
 
 interface ContainerProps {
-  message: Message;
+  messag: Message;
   color: string;
 }
 
-const MessageContainer: React.FC<ContainerProps> = ({ message, color }) => {
+const MessageContainer: React.FC<ContainerProps> = ({ messag, color }) => {
 
 
   const cdate: Date = new Date();
   const date: String = cdate.toLocaleDateString() + ' ' + cdate.toLocaleTimeString();
-  const mess = message.message;
-  const username = message.user;
-  const recordData = message.record;
-  const imageSource = message.image;
-  const audioPlayVisible = message.record.value ? true : false;
+  const mess = messag.message;
+  const username = messag.user;
+  const recordData = messag.record;
+  const imageSource = messag.image;
+  const audioPlayVisible = messag.record.value ? true : false;
 
 
   return (

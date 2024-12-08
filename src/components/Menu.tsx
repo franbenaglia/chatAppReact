@@ -22,18 +22,12 @@ interface AppPage {
 }
 
 const appPages: AppPage[] = [
-  {
+  /*{
     title: 'Inbox',
     url: '/folder/Inbox',
     iosIcon: mailOutline,
     mdIcon: mailSharp
-  },
-  {
-    title: 'Login',
-    url: '/Login',
-    iosIcon: mailOutline,
-    mdIcon: mailSharp
-  },
+  },*/
   {
     title: 'Chat',
     url: '/Chat',
@@ -61,15 +55,19 @@ const appPages: AppPage[] = [
 
 ];
 
-const Menu: React.FC = () => {
+interface ContainerProps {
+  user: string
+}
+
+const Menu: React.FC<ContainerProps> = ({ user }) => {
   const location = useLocation();
 
   return (
     <IonMenu contentId="main" type="overlay">
       <IonContent>
         <IonList id="inbox-list">
-          <IonListHeader>Inbox</IonListHeader>
-          <IonNote>hi@ionicframework.com</IonNote>
+          <IonListHeader>ChatApp</IonListHeader>
+          <IonNote>{user}</IonNote>
           {appPages.map((appPage, index) => {
             return (
               <IonMenuToggle key={index} autoHide={false}>

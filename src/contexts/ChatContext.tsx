@@ -1,27 +1,29 @@
 import { createContext, useState } from "react";
-import { useCookies } from "react-cookie";
+import { Message } from "../model/message";
 
-export const ChatContext = createContext({});
+export interface ChatContextI {
+
+    //messages: Message[],
+    //clearMessages: () => void,
+    getGroup: () => string,
+    setTheGroup: (gr: string) => void,
+    addConnectedUsers: (user: string) => void,
+    connectedUsers: string[],
+    user: string,
+    setUser: (user: string) => void
+    //setMessages: any
+
+}
+
+export const ChatContext = createContext<ChatContextI>({} as ChatContextI);
 
 export const ChatProvider = ({ children }: any) => {
 
     const [user, setUser] = useState('');
 
-    const [cookies] = useCookies(['token', 'username']);
-
-    if (cookies.username) { //useeffect?
-        setUser(cookies.username);
-    }
-
-    const [messages, setMessages] = useState([] as any[]);
-
-    const [group, setGroup] = useState('');
+    const [group, setGroup] = useState('general');
 
     const [connectedUsers, setConnectedUsers] = useState([] as string[]);
-
-    const clearMessages = () => {
-        setMessages([]);
-    }
 
     const getGroup = () => group;
 
@@ -37,7 +39,10 @@ export const ChatProvider = ({ children }: any) => {
     }
 
     return (
-        <ChatContext.Provider value={{ messages, clearMessages, getGroup, setTheGroup, addConnectedUsers, connectedUsers, user }}>
+        <ChatContext.Provider value={{
+            getGroup, setTheGroup,
+            addConnectedUsers, connectedUsers, user, setUser
+        }}>
             {children}
         </ChatContext.Provider>
     );

@@ -1,21 +1,28 @@
 import { CurrentRecordingStatus, GenericResponse, RecordingData, VoiceRecorder } from 'capacitor-voice-recorder';
 import './ExploreContainer.css';
-import { useContext, useEffect } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AudioFileContext } from '../contexts/AudioFileContext';
-import { IonButton, IonCol, IonGrid, IonRow, IonTitle } from '@ionic/react';
+import { IonButton, IonCard, IonCardContent, IonCol, IonGrid, IonIcon, IonRow, IonTitle } from '@ionic/react';
+import { micCircleOutline, pauseOutline, playOutline, playSkipForwardOutline, stopOutline } from 'ionicons/icons';
+import { Toast } from '@capacitor/toast';
+
+const showToast = async (message: string) => {
+    await Toast.show({
+        text: message,
+        position: 'top'
+    });
+};
 
 const Recorder: React.FC = () => {
 
-    let isRecording: Boolean = false;
-    let messageError: String = "";
-    let status: string = "";
-    let recordingAvailable = false;
-    let permissionGranted = false;
-    let recordingData: RecordingData = {} as RecordingData;
-    let counter: number = 0;
-    let inter: any;
-
     const { setAudioFile } = useContext(AudioFileContext);
+
+    const [status, setStatus] = useState('');
+    const [recordingAvailable, setRecordingAvailable] = useState(false);
+    const [permissionGranted, setPermissionGranted] = useState(false);
+    const [counter, setCounter] = useState(0);
+    const [secs, setSecs] = useState(0);
+    const [inter, setInter] = useState(null);
 
     useEffect(() => {
 
@@ -27,32 +34,31 @@ const Recorder: React.FC = () => {
     const recorderAvailable = () => {
         VoiceRecorder.canDeviceVoiceRecord().then((result: GenericResponse) => {
             console.log('Media recording available :' + result.value);
-            recordingAvailable = result.value;
+            setRecordingAvailable(result.value);
         });
     }
 
     const recordPermissionRequest = () => {
         VoiceRecorder.requestAudioRecordingPermission().then((result: GenericResponse) => {
             console.log('User permission: ' + result.value);
-            permissionGranted = result.value;
+            setPermissionGranted(result.value);
         }
         )
     }
 
-
     const recordPermissionGranted = () => {
         VoiceRecorder.hasAudioRecordingPermission().then((result: GenericResponse) => {
             console.log(result.value);
-            permissionGranted = result.value;
+            setPermissionGranted(result.value);
         })
     }
 
     const start = () => {
         VoiceRecorder.startRecording()
             .then((result: GenericResponse) => {
-                isRecording = result.value;
+                const isRecording = result.value;
                 if (isRecording) {
-                    counter = 0;
+                    setCounter(0);
                     timer();
                 }
                 currentStatus();
@@ -61,6 +67,8 @@ const Recorder: React.FC = () => {
             .catch(error => {
 
                 console.log(error)
+
+                let messageError: string = '';
 
                 switch (error) {
                     case 'MISSING_PERMISSION': {
@@ -89,27 +97,46 @@ const Recorder: React.FC = () => {
                     }
                 }
 
+                showToast(messageError);
+
             });
     }
 
+
+
+    const seconds = () => {
+        const vfor: string = counter.toLocaleString(undefined, { maximumFractionDigits: 2 });
+        setSecs(Number(vfor));
+        console.log('secs: ' + secs);
+    }
+
+
+
     const timer = () => {
-        inter = setInterval(() => {
-            counter += 0.1;
-        }, 100);
+
+        const int = setInterval(() => {
+            setCounter(counter => counter + 0.5);
+            //console.log('counter: ' + counter);
+            //seconds();
+        }, 500);
+
+        setInter(int);
+
     }
 
     const stop = () => {
 
         VoiceRecorder.stopRecording()
             .then((result: RecordingData) => {
-                recordingData = result;
+                const recordingData: RecordingData = result;
                 currentStatus();
                 clearInterval(inter);
-                //this.counter=0;
                 setAudioFile(recordingData);
             })
             .catch(error => {
                 console.log(error);
+
+                let messageError: string = '';
 
                 switch (error) {
                     case 'RECORDING_HAS_NOT_STARTED': {
@@ -129,7 +156,7 @@ const Recorder: React.FC = () => {
                         break;
                     }
                 }
-
+                showToast(messageError);
             });
 
     }
@@ -161,55 +188,52 @@ const Recorder: React.FC = () => {
             .then((result: CurrentRecordingStatus) => {
 
                 console.log(result.status);
-                status = result.status;
+                setStatus(result.status);
 
             })
             .catch(error => console.log(error));
     }
 
     return (
-        <IonGrid>
-            <IonRow>
-                <IonCol>
-                    <IonButton onClick={() => recorderAvailable()}>Record Available</IonButton>
-                </IonCol>
-                <IonCol>
-                    <IonTitle>
-                        Recording available: {recordingAvailable}
-                    </IonTitle>
-                </IonCol>
-                <IonCol>
-                    <IonButton onClick={() => recordPermissionRequest()}>Permission</IonButton>
-                </IonCol>
-                <IonCol>
-                    <IonTitle>
-                        Permission: {permissionGranted}
-                    </IonTitle>
-                </IonCol>
-            </IonRow>
-            <IonRow>
-                <IonCol>
-                    <IonButton onClick={() => start()} >Start</IonButton>
-                </IonCol>
-                <IonCol>
-                    <IonButton onClick={() => stop()}   >Stop</IonButton>
-                </IonCol>
-                <IonCol>
-                    <IonButton onClick={() => pause()}    >Pause</IonButton>
-                </IonCol >
-                <IonCol>
-                    <IonButton onClick={() => resume()} >Resume</IonButton>
-                </IonCol >
-            </IonRow >
-            <IonRow>
-                <IonCol>
-                    <IonButton onClick={() => currentStatus()}>Current status</IonButton>
-                </IonCol>
-                <IonCol>
-                    <IonTitle>Status: {status}</IonTitle>
-                </IonCol>
-            </IonRow >
-        </IonGrid >
+
+
+        <IonCard color="red">
+            <IonCardContent>
+                <IonGrid>
+                    <IonRow>
+                        <IonCol>
+                            <IonButton onClick={() => start()} color="light">
+                                <IonIcon ios={micCircleOutline} md={micCircleOutline}></IonIcon>
+                            </IonButton>
+                        </IonCol>
+                        <IonCol>
+                            <IonButton onClick={() => stop()} color="light">
+                                <IonIcon ios={stopOutline} md={stopOutline} />
+
+                            </IonButton>
+                        </IonCol>
+                        <IonCol>
+                            <IonButton onClick={() => pause()} color="light" >
+                                <IonIcon ios={playSkipForwardOutline} md={playSkipForwardOutline} />
+                            </IonButton>
+                        </IonCol >
+                        <IonCol>
+                            <IonButton onClick={() => resume()} color="light">
+                                <IonIcon ios={pauseOutline} md={pauseOutline} />
+                            </IonButton>
+                        </IonCol >
+                    </IonRow >
+                    <IonRow>
+                        <IonCol>
+                            <IonTitle>Status: {status}</IonTitle>
+                        </IonCol>
+                        <IonCol>
+                            <IonTitle>Segs: {counter}</IonTitle>
+                        </IonCol>
+                    </IonRow >
+                </IonGrid >
+            </IonCardContent>
+        </IonCard>
     );
 }
 

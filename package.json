@@ -21,6 +21,7 @@
     "@capacitor/keyboard": "6.0.3",
     "@capacitor/preferences": "^6.0.3",
     "@capacitor/status-bar": "6.0.2",
+    "@capacitor/toast": "^6.0.3",
     "@ionic/pwa-elements": "^3.3.0",
     "@ionic/react": "^8.0.0",
     "@ionic/react-router": "^8.0.0",
@@ -33,7 +34,8 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.53.2",
     "react-router": "^5.3.4",
-    "react-router-dom": "^5.3.4"
+    "react-router-dom": "^5.3.4",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@capacitor/cli": "6.2.0",
